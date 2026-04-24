@@ -24,25 +24,17 @@ jobs:
 
       - name: Deploy (Restart do Serviço)
         run: |
-          echo "🚀 Iniciando Deploy em /vagrant/services/orionpay-interchange-visa..."
-          
-          # 1. Define o diretório fixo onde está seu application.yml
           TARGET_DIR="/vagrant/services/orionpay-interchange-visa"
+           cd $TARGET_DIR
           
-          # 2. Mata o processo atual na porta 8085
-          sudo fuser -k 8085/tcp || true
+           # 1. Mata o que estiver na 8085 (seu alvo) e na 8080 (o que subiu errado)
+           sudo fuser -k 8085/tcp || true
+           sudo fuser -k 8080/tcp || true
           
-          # 3. Copia o novo JAR para a pasta oficial (sobrescrevendo o antigo)
-          cp orionpay-incoming-visa/target/*.jar $TARGET_DIR/app.jar
+           # 2. Copia o novo JAR do build para cá, renomeando para app.jar para facilitar
+           cp orionpay-incoming-visa/target/orionpay-interchange-visa-*.jar ./app.jar
           
-          # 4. Entra na pasta oficial ANTES de rodar
-          # Isso é CRÍTICO para o Spring achar o application.yml local
-          cd $TARGET_DIR
+           # 3. Executa FORÇANDO o uso do application.yml que está na pasta
+           nohup java -jar app.jar --spring.config.location=file:./application.yml > app.log 2>&1 &
           
-          # 5. Executa em background
-          nohup java -jar app.jar > app.log 2>&1 &
-          
-          # 6. Pequena pausa para garantir que o processo descole do shell do runner
-          sleep 5
-          
-          echo "✅ Serviço reiniciado com sucesso em $TARGET_DIR!"
+           echo "🚀 Serviço reiniciado usando application.yml local!"
