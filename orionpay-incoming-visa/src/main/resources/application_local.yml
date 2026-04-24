@@ -1,0 +1,41 @@
+server:
+  port: 8080
+
+
+spring:
+  application:
+    name: orionpay-interchange-visa
+
+  datasource:
+    # URL de banco de dados, ajuste de acordo com o seu ambiente
+    url: jdbc:postgresql://localhost:5432/orion_payments
+    username: postgres
+    password: admin
+    driver-class-name: org.postgresql.Driver
+
+  jpa:
+    database-platform: org.hibernate.dialect.PostgreSQLDialect
+    hibernate:
+      # Desativa a criacao automatica de tabelas pelo Hibernate, pois usaremos o Flyway
+      ddl-auto: validate
+    show-sql: false
+    properties:
+      hibernate.format_sql: true
+
+  batch:
+    jdbc:
+      initialize-schema: always # Cria as tabelas padrao do Spring Batch
+      table-prefix: visa_interchange.BATCH_
+    job:
+      enabled: false
+
+
+  flyway:
+    enabled: true
+    baseline-on-migrate: true # Permite aplicar o script em bancos que ja existem
+    locations: classpath:db/migration
+    schemas: visa_interchange
+
+visa:
+  sftp:
+    local-dir: file:data/inbox
