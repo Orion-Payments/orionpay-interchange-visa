@@ -33,7 +33,7 @@ jobs:
           sudo fuser -k 8085/tcp || true
           
           # 3. Copia o novo JAR para a pasta oficial (sobrescrevendo o antigo)
-          cp orionpay-incoming-visa/target/*.jar $TARGET_DIR/orionpay-interchange-visa.jar
+          cp orionpay-incoming-visa/target/*.jar $TARGET_DIR/app.jar
           
           # 4. Entra na pasta oficial ANTES de rodar
           # Isso é CRÍTICO para o Spring achar o application.yml local
