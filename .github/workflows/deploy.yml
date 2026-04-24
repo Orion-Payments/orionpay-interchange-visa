@@ -2,11 +2,11 @@ name: OrionPay CI/CD Pipeline
 
 on:
   push:
-    branches: [ "main", "develop" ] # Dispara o deploy ao enviar para estas branches
+    branches: [ "main", "develop" ]
 
 jobs:
   build-and-deploy:
-    runs-on: self-hosted # Indica que deve rodar na sua VM Orion-Server
+    runs-on: self-hosted
 
     steps:
       - name: Checkout do Código
@@ -24,14 +24,25 @@ jobs:
 
       - name: Deploy (Restart do Serviço)
         run: |
-          echo "🚀 Reiniciando OrionPay Interchange..."
-          # Mata o processo atual na porta 8085
+          echo "🚀 Iniciando Deploy em /vagrant/services/orionpay-interchange-visa..."
+          
+          # 1. Define o diretório fixo onde está seu application.yml
+          TARGET_DIR="/vagrant/services/orionpay-interchange-visa"
+          
+          # 2. Mata o processo atual na porta 8085
           sudo fuser -k 8085/tcp || true
           
-          # Move o JAR para a pasta final de execução
-          mkdir -p ~/services/orionpay
-          cp orionpay-incoming-visa/target/*.jar ~/services/orionpay/app.jar
+          # 3. Copia o novo JAR para a pasta oficial (sobrescrevendo o antigo)
+          cp orionpay-incoming-visa/target/*.jar $TARGET_DIR/orionpay-interchange-visa.jar
           
-          # Executa em background
-          nohup java -jar ~/services/orionpay/app.jar > ~/services/orionpay/app.log 2>&1 &
-          echo "✅ Serviço iniciado com sucesso!"
+          # 4. Entra na pasta oficial ANTES de rodar
+          # Isso é CRÍTICO para o Spring achar o application.yml local
+          cd $TARGET_DIR
+          
+          # 5. Executa em background
+          nohup java -jar app.jar > app.log 2>&1 &
+          
+          # 6. Pequena pausa para garantir que o processo descole do shell do runner
+          sleep 5
+          
+          echo "✅ Serviço reiniciado com sucesso em $TARGET_DIR!"
