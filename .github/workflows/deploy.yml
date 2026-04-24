@@ -25,20 +25,24 @@ jobs:
       - name: Deploy (Restart do Serviço)
         run: |
           TARGET_DIR="/vagrant/services/orionpay-interchange-visa"
-           cd $TARGET_DIR
+          cd $GITHUB_WORKSPACE
           
-           # 1. Mata qualquer processo anterior
-           sudo fuser -k 8085/tcp || true
-          
-           # 2. Copia o JAR (garantindo que o usuário vagrant consiga escrever)
-           cp orionpay-incoming-visa/target/*.jar ./app.jar
-          
-           # 3. O PULO DO GATO: Usa o 'setsid' para criar uma sessão totalmente nova
-           # e o 'disown' para o shell não esperar por ele.
-           setsid nohup java -jar app.jar > app.log 2>&1 &
-          
-           # 4. Aguarda 10 segundos para o Spring dar o 'boot' inicial
-           sleep 10
+            echo "📂 Listando arquivos para encontrar o JAR..."
+            # Este comando vai listar todos os JARs gerados para a gente ter certeza do caminho
+            find . -name "*.jar" -path "*/target/*"
+            
+            # 1. Tenta copiar usando um padrão mais genérico
+            # Vamos buscar em qualquer pasta target que contenha o JAR do projeto
+            cp $(find . -name "orionpay-interchange-visa-*.jar" -path "*/target/*" | head -n 1) $TARGET_DIR/app.jar
+            
+            cd $TARGET_DIR
+            sudo fuser -k 8085/tcp || true
+            
+            setsid nohup java -jar app.jar > app.log 2>&1 &
+            disown
+            
+            sleep 10
+            ps -ef | grep app.jar | grep -v grep
           
            # 5. Validação em tempo real: Se o processo sumir agora, o erro vai para o log do GitHub
            if ps -ef | grep -v grep | grep "app.jar"; then
